@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>*{box-sizing:border-box}img{max-width:100%}</style>
+<title>Алиса, с днём рождения</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Manrope:wght@500;700&display=swap">
+<style>
+/* Layout: single column, gift-card feel — a play pill pinned at the bottom, the collage as the body */
+:root {
+  --bg: #120d10;
+  --ink: #f6ece6;
+  --muted: #b9a7a4;
+  --blush: #f3c9c4;
+  --gold: #e8b871;
+  --surface: #221a1e;
+  --hand: "Caveat", "Segoe Print", cursive;
+  --body: "Manrope", system-ui, -apple-system, sans-serif;
+  color-scheme: dark;
+}
+html, body { background: var(--bg); color: var(--ink); }
+body {
+  font-family: var(--body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 120px;
+}
+.wrap { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+header { text-align: center; display: flex; flex-direction: column; gap: 4px; }
+.eyebrow { font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+h1 {
+  font-family: var(--hand); font-weight: 700; color: var(--blush);
+  font-size: clamp(40px, 11vw, 64px); line-height: 1; margin: 0; text-wrap: balance;
+}
+.sub { color: var(--muted); font-size: 15px; margin: 0; }
+figure { margin: 0; }
+figure img {
+  display: block; width: 100%; height: auto; border-radius: 6px;
+  box-shadow: 0 20px 60px -20px rgba(0,0,0,.8);
+}
+.player {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 5;
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) calc(14px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  background: linear-gradient(to top, var(--bg) 60%, transparent);
+}
+.bar {
+  max-width: 640px; margin: 0 auto; display: flex; align-items: center; gap: 14px;
+  background: var(--surface); border: 1px solid rgba(243,201,196,.18);
+  border-radius: 999px; padding: 8px 18px 8px 8px;
+}
+#play {
+  flex: none; width: 56px; height: 56px; border-radius: 50%; border: 0; cursor: pointer;
+  background: var(--blush); color: var(--bg); display: grid; place-items: center;
+}
+#play:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+#play svg { width: 22px; height: 22px; }
+.meta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.track { font-weight: 700; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prog { height: 4px; background: rgba(246,236,230,.14); border-radius: 2px; overflow: hidden; cursor: pointer; }
+.prog i { display: block; height: 100%; width: 0; background: var(--gold); }
+.time { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.pulse #play { animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(243,201,196,.55); } 50% { box-shadow: 0 0 0 14px rgba(243,201,196,0); } }
+@media (prefers-reduced-motion: reduce) { .pulse #play { animation: none; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">31 · Ростов → Москва</span>
+    <h1>С днём рождения, Кекс!</h1>
+    <p class="sub">Нажми ▶ внизу — там твоя песня</p>
+  </header>
+  <figure><img src="story.jpg" alt="Сказка про Укроп и Кекс — коллаж из фотографий Ксюши и Алисы" width="1024" height="1536"></figure>
+</div>
+
+<div class="player pulse" id="player">
+  <div class="bar">
+    <button id="play" aria-label="Включить песню">
+      <svg id="ic" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+    </button>
+    <div class="meta">
+      <div class="track">Песня для Алисы Сметаниной</div>
+      <div class="prog" id="prog"><i id="fill"></i></div>
+      <div class="time" id="time">0:00 / 3:12</div>
+    </div>
+  </div>
+</div>
+<audio id="a" src="song.mp3" preload="auto" playsinline></audio>
+
+<script>
+const a = document.getElementById('a'), btn = document.getElementById('play'),
+      ic = document.getElementById('ic'), fill = document.getElementById('fill'),
+      time = document.getElementById('time'), player = document.getElementById('player'),
+      prog = document.getElementById('prog');
+const PLAY = '<path d="M8 5v14l11-7z"/>', PAUSE = '<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>';
+const fmt = s => isFinite(s) ? Math.floor(s/60) + ':' + String(Math.floor(s%60)).padStart(2,'0') : '0:00';
+function ui() {
+  const on = !a.paused;
+  ic.innerHTML = on ? PAUSE : PLAY;
+  btn.setAttribute('aria-label', on ? 'Пауза' : 'Включить песню');
+  if (on) player.classList.remove('pulse');
+}
+btn.addEventListener('click', () => { a.paused ? a.play().catch(()=>{}) : a.pause(); });
+a.addEventListener('play', ui); a.addEventListener('pause', ui);
+a.addEventListener('timeupdate', () => {
+  fill.style.width = (a.duration ? a.currentTime / a.duration * 100 : 0) + '%';
+  time.textContent = fmt(a.currentTime) + ' / ' + fmt(a.duration || 192);
+});
+prog.addEventListener('click', e => {
+  const r = prog.getBoundingClientRect();
+  if (a.duration) a.currentTime = (e.clientX - r.left) / r.width * a.duration;
+});
+// Пробуем запустить сразу; если телефон запрещает — первое касание по странице включит песню
+a.play().catch(() => {
+  const start = () => { if (a.paused) a.play().catch(()=>{}); };
+  document.addEventListener('pointerdown', e => { if (!btn.contains(e.target)) start(); }, { once: true });
+});
+</script>
+</body>
+</html>
