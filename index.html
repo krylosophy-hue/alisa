@@ -65,15 +65,36 @@ figure img {
 .pulse #play { animation: pulse 1.6s ease-in-out infinite; }
 @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(243,201,196,.55); } 50% { box-shadow: 0 0 0 14px rgba(243,201,196,0); } }
 @media (prefers-reduced-motion: reduce) { .pulse #play { animation: none; } }
+#gate {
+  position: fixed; inset: 0; z-index: 20; cursor: pointer;
+  background: radial-gradient(120% 80% at 50% 40%, #3a2228 0%, var(--bg) 70%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px;
+  padding: max(24px, env(safe-area-inset-top, 0px)) max(24px, env(safe-area-inset-right, 0px)) max(24px, env(safe-area-inset-bottom, 0px)) max(24px, env(safe-area-inset-left, 0px));
+  text-align: center; transition: opacity .6s ease, visibility .6s;
+}
+#gate.gone { opacity: 0; visibility: hidden; }
+#gate .big { font-family: var(--hand); font-weight: 700; color: var(--blush); font-size: clamp(52px, 16vw, 96px); line-height: .95; text-wrap: balance; }
+#gate .ring {
+  width: 96px; height: 96px; border-radius: 50%; background: var(--blush); color: var(--bg);
+  display: grid; place-items: center; animation: pulse 1.6s ease-in-out infinite;
+}
+#gate .ring svg { width: 40px; height: 40px; margin-left: 6px; }
+#gate .hint { color: var(--ink); font-size: 18px; font-weight: 700; letter-spacing: .02em; }
+@media (prefers-reduced-motion: reduce) { #gate .ring { animation: none; } }
 </style>
 </head>
 <body>
+<div id="gate" role="button" tabindex="0" aria-label="Открыть подарок и включить песню">
+  <div class="big">Алиса, тебе подарок</div>
+  <div class="ring"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>
+  <div class="hint">Коснись экрана, чтобы открыть</div>
+</div>
 
 <div class="wrap">
   <header>
     <span class="eyebrow">31 · Ростов → Москва</span>
     <h1>С днём рождения, Кекс!</h1>
-    <p class="sub">Нажми ▶ внизу — там твоя песня</p>
+    <p class="sub">Это твоя песня. Сделай погромче</p>
   </header>
   <figure><img src="story.jpg" alt="Сказка про Укроп и Кекс — коллаж из фотографий Ксюши и Алисы" width="1024" height="1536"></figure>
 </div>
@@ -115,11 +136,16 @@ prog.addEventListener('click', e => {
   const r = prog.getBoundingClientRect();
   if (a.duration) a.currentTime = (e.clientX - r.left) / r.width * a.duration;
 });
-// Пробуем запустить сразу; если телефон запрещает — первое касание по странице включит песню
-a.play().catch(() => {
-  const start = () => { if (a.paused) a.play().catch(()=>{}); };
-  document.addEventListener('pointerdown', e => { if (!btn.contains(e.target)) start(); }, { once: true });
-});
+// Заставка: первое касание в любом месте открывает открытку и сразу включает песню
+const gate = document.getElementById('gate');
+function openGift() {
+  a.play().catch(()=>{});
+  gate.classList.add('gone');
+}
+gate.addEventListener('click', openGift);
+gate.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openGift(); } });
+// Если браузер всё же разрешает автозапуск (бывает на компьютере) — играем сразу и убираем заставку
+a.play().then(() => gate.classList.add('gone')).catch(()=>{});
 </script>
 </body>
 </html>
